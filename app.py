@@ -2,23 +2,23 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import os
 
-# ==========================
+# =====================================
 # PAGE CONFIG
-# ==========================
+# =====================================
 
 st.set_page_config(
-    page_title="Advanced Forecasting Platform",
+    page_title="Forecasting Platform",
     page_icon="📈",
     layout="wide"
 )
 
-# ==========================
+# =====================================
 # CUSTOM CSS
-# ==========================
+# =====================================
 
 st.markdown("""
+
 <style>
 
 .main{
@@ -30,38 +30,39 @@ color:white;
 }
 
 </style>
-""", unsafe_allow_html=True)
 
-# ==========================
+""",unsafe_allow_html=True)
+
+# =====================================
 # SIDEBAR
-# ==========================
+# =====================================
 
 st.sidebar.image(
-    "https://cdn-icons-png.flaticon.com/512/2103/2103633.png",
-    width=80
+"https://cdn-icons-png.flaticon.com/512/2103/2103633.png",
+width=80
 )
 
 st.sidebar.title(
-    "Forecasting Platform"
+"Forecasting Platform"
 )
 
-# ==========================
+# =====================================
 # FILE UPLOAD
-# ==========================
+# =====================================
 
 uploaded_file=st.sidebar.file_uploader(
-    "Upload CSV Dataset",
-    type=["csv"]
+"Upload CSV Dataset",
+type=["csv"]
 )
 
 if uploaded_file:
 
     processed_df=pd.read_csv(
-        uploaded_file
+    uploaded_file
     )
 
     st.sidebar.success(
-        "Dataset uploaded successfully"
+    "Dataset uploaded successfully"
     )
 
 else:
@@ -69,67 +70,91 @@ else:
     try:
 
         processed_df=pd.read_csv(
-            "exports/processed_data.csv"
+        "exports/processed_data.csv"
         )
 
         st.sidebar.success(
-            "Using default dataset"
+        "Using default dataset"
         )
 
     except:
 
         st.warning(
-            "Upload dataset to continue"
+        "Please upload dataset"
         )
 
         st.stop()
 
-# ==========================
-# COLUMN SELECTION
-# ==========================
+# =====================================
+# DATA CONFIGURATION
+# =====================================
 
 st.sidebar.subheader(
-    "Dataset Configuration"
+"Dataset Configuration"
 )
+
+all_columns=processed_df.columns.tolist()
 
 date_col=st.sidebar.selectbox(
-    "Select Date Column",
-    processed_df.columns
+
+"Select Date Column",
+
+all_columns,
+
+index=all_columns.index("date")
+if "date" in all_columns
+else 0
+
 )
 
-target_col=st.sidebar.selectbox(
-    "Select Target Column",
-    processed_df.select_dtypes(
-        include=['int64','float64']
-    ).columns
-)
-
-# ==========================
-# DATE CONVERSION
-# ==========================
+# Convert date safely
 
 try:
 
     processed_df[date_col]=pd.to_datetime(
-        processed_df[date_col]
+    processed_df[date_col]
     )
 
 except:
 
     st.error(
-        "Date column conversion failed"
+    "Cannot convert date column"
     )
 
     st.stop()
 
-# ==========================
+# Numeric columns only
+
+numeric_columns=processed_df.select_dtypes(
+include=["int64","float64"]
+).columns.tolist()
+
+if date_col in numeric_columns:
+
+    numeric_columns.remove(
+    date_col
+    )
+
+target_col=st.sidebar.selectbox(
+
+"Select Target Column",
+
+numeric_columns,
+
+index=numeric_columns.index("sales")
+if "sales" in numeric_columns
+else 0
+
+)
+
+# =====================================
 # LOAD FORECAST FILES
-# ==========================
+# =====================================
 
 try:
 
     prophet_df=pd.read_csv(
-        "exports/prophet_forecast.csv"
+    "exports/prophet_forecast.csv"
     )
 
 except:
@@ -139,16 +164,16 @@ except:
 try:
 
     xgb_df=pd.read_csv(
-        "exports/xgboost_predictions.csv"
+    "exports/xgboost_predictions.csv"
     )
 
 except:
 
     xgb_df=pd.DataFrame()
 
-# ==========================
+# =====================================
 # NAVIGATION
-# ==========================
+# =====================================
 
 menu=st.sidebar.radio(
 
@@ -165,9 +190,9 @@ menu=st.sidebar.radio(
 
 )
 
-# ==========================
+# =====================================
 # TITLE
-# ==========================
+# =====================================
 
 st.title(
 "📈 Advanced Time Series Forecasting Platform"
@@ -184,9 +209,9 @@ AI-powered forecasting system using:
 
 """)
 
-# ==========================
+# =====================================
 # DASHBOARD
-# ==========================
+# =====================================
 
 if menu=="Dashboard":
 
@@ -198,7 +223,7 @@ if menu=="Dashboard":
 
     avg=processed_df[target_col].mean()
 
-    max_val=processed_df[target_col].max()
+    maximum=processed_df[target_col].max()
 
     total_records=len(
     processed_df
@@ -220,7 +245,7 @@ if menu=="Dashboard":
 
     col3.metric(
     "Maximum",
-    f"{max_val:,.0f}"
+    f"{maximum:,.0f}"
     )
 
     col4.metric(
@@ -231,9 +256,7 @@ if menu=="Dashboard":
     trend_df=(
 
     processed_df
-    .groupby(
-    date_col
-    )[target_col]
+    .groupby(date_col)[target_col]
     .sum()
     .reset_index()
 
@@ -245,7 +268,7 @@ if menu=="Dashboard":
 
     x=date_col,
     y=target_col,
-    title="Trend Over Time"
+    title="Trend Analysis"
 
     )
 
@@ -254,9 +277,9 @@ if menu=="Dashboard":
     use_container_width=True
     )
 
-# ==========================
-# DATA ANALYTICS
-# ==========================
+# =====================================
+# DATASET ANALYTICS
+# =====================================
 
 elif menu=="Dataset Analytics":
 
@@ -265,13 +288,11 @@ elif menu=="Dataset Analytics":
     )
 
     st.subheader(
-    "Dataset Preview"
+    "Preview"
     )
 
     st.dataframe(
-    processed_df.head(
-    100
-    )
+    processed_df.head(100)
     )
 
     st.subheader(
@@ -290,9 +311,9 @@ elif menu=="Dataset Analytics":
     processed_df.describe()
     )
 
-# ==========================
+# =====================================
 # PROPHET
-# ==========================
+# =====================================
 
 elif menu=="Prophet Forecast":
 
@@ -300,9 +321,7 @@ elif menu=="Prophet Forecast":
     "Prophet Forecast"
     )
 
-    if len(
-    prophet_df
-    )>0:
+    if len(prophet_df)>0:
 
         fig=go.Figure()
 
@@ -312,7 +331,7 @@ elif menu=="Prophet Forecast":
 
         x=prophet_df["ds"],
         y=prophet_df["yhat"],
-        mode='lines',
+        mode="lines",
         name="Forecast"
 
         )
@@ -325,7 +344,7 @@ elif menu=="Prophet Forecast":
 
         x=prophet_df["ds"],
         y=prophet_df["yhat_upper"],
-        mode='lines',
+        mode="lines",
         name="Upper"
 
         )
@@ -338,7 +357,7 @@ elif menu=="Prophet Forecast":
 
         x=prophet_df["ds"],
         y=prophet_df["yhat_lower"],
-        mode='lines',
+        mode="lines",
         name="Lower"
 
         )
@@ -353,12 +372,12 @@ elif menu=="Prophet Forecast":
     else:
 
         st.warning(
-        "No Prophet forecast file found"
+        "No prophet file found"
         )
 
-# ==========================
+# =====================================
 # XGBOOST
-# ==========================
+# =====================================
 
 elif menu=="XGBoost Forecast":
 
@@ -366,19 +385,15 @@ elif menu=="XGBoost Forecast":
     "XGBoost Forecast"
     )
 
-    if len(
-    xgb_df
-    )>0:
+    if len(xgb_df)>0:
 
         fig=px.line(
 
-        xgb_df.head(
-        500
-        ),
+        xgb_df.head(500),
 
         y=[
-        'Actual',
-        'Predicted'
+        "Actual",
+        "Predicted"
         ],
 
         title="Actual vs Predicted"
@@ -396,43 +411,35 @@ elif menu=="XGBoost Forecast":
         "No prediction file found"
         )
 
-# ==========================
+# =====================================
 # MODEL COMPARISON
-# ==========================
+# =====================================
 
 elif menu=="Model Comparison":
 
-    st.header(
-    "Model Comparison"
-    )
-
-    compare=pd.DataFrame({
+    comparison=pd.DataFrame({
 
     "Model":[
-
     "ARIMA",
     "Prophet",
     "XGBoost"
-
     ],
 
     "MAPE":[
-
     33.66,
     40.74,
     20
-
     ]
 
     })
 
     fig=px.bar(
 
-    compare,
+    comparison,
 
     x="Model",
     y="MAPE",
-    title="Forecast Accuracy"
+    title="Model Performance"
 
     )
 
@@ -441,14 +448,14 @@ elif menu=="Model Comparison":
     use_container_width=True
     )
 
-# ==========================
+# =====================================
 # DOWNLOAD
-# ==========================
+# =====================================
 
 elif menu=="Download Center":
 
     st.header(
-    "Download Forecast Files"
+    "Download Files"
     )
 
     if len(prophet_df)>0:
@@ -461,9 +468,7 @@ elif menu=="Download Center":
         index=False
         ),
 
-        "prophet_forecast.csv",
-
-        "text/csv"
+        "prophet.csv"
 
         )
 
@@ -477,18 +482,16 @@ elif menu=="Download Center":
         index=False
         ),
 
-        "xgboost_predictions.csv",
-
-        "text/csv"
+        "xgboost.csv"
 
         )
 
-# ==========================
+# =====================================
 # FOOTER
-# ==========================
+# =====================================
 
 st.markdown("---")
 
 st.caption(
-"Developed using Python | Streamlit | Plotly | Prophet | XGBoost"
+"Developed using Python | Streamlit | Prophet | XGBoost"
 )
