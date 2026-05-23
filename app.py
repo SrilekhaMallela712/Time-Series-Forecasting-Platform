@@ -2,471 +2,493 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import os
 
-# =========================
+# ==========================
 # PAGE CONFIG
-# =========================
+# ==========================
 
 st.set_page_config(
-    page_title="Forecasting Platform",
+    page_title="Advanced Forecasting Platform",
     page_icon="📈",
     layout="wide"
 )
 
-# =========================
+# ==========================
 # CUSTOM CSS
-# =========================
+# ==========================
 
 st.markdown("""
 <style>
 
-.main {
-    background-color: #0E1117;
+.main{
+background-color:#0E1117;
 }
 
-section[data-testid="stSidebar"] {
-    background-color: #111827;
-}
-
-h1, h2, h3, h4 {
-    color: white;
-}
-
-.stMetric {
-    background-color: #1F2937;
-    padding: 15px;
-    border-radius: 12px;
-    text-align: center;
+h1,h2,h3{
+color:white;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
+# ==========================
 # SIDEBAR
-# =========================
+# ==========================
 
 st.sidebar.image(
     "https://cdn-icons-png.flaticon.com/512/2103/2103633.png",
     width=80
 )
 
-st.sidebar.title("Forecasting Platform")
+st.sidebar.title(
+    "Forecasting Platform"
+)
 
-# =========================
-# DATASET UPLOAD
-# =========================
+# ==========================
+# FILE UPLOAD
+# ==========================
 
-uploaded_file = st.sidebar.file_uploader(
+uploaded_file=st.sidebar.file_uploader(
     "Upload CSV Dataset",
     type=["csv"]
 )
 
-# =========================
-# LOAD DATASET
-# =========================
+if uploaded_file:
 
-if uploaded_file is not None:
-
-    processed_df = pd.read_csv(uploaded_file)
+    processed_df=pd.read_csv(
+        uploaded_file
+    )
 
     st.sidebar.success(
-        "Dataset Uploaded Successfully!"
+        "Dataset uploaded successfully"
     )
 
 else:
 
-    processed_df = pd.read_csv(
-        "exports/processed_data.csv"
-    )
+    try:
 
-    st.sidebar.info(
-        "Using Default Dataset"
-    )
+        processed_df=pd.read_csv(
+            "exports/processed_data.csv"
+        )
 
-# =========================
+        st.sidebar.success(
+            "Using default dataset"
+        )
+
+    except:
+
+        st.warning(
+            "Upload dataset to continue"
+        )
+
+        st.stop()
+
+# ==========================
 # COLUMN SELECTION
-# =========================
+# ==========================
 
-st.sidebar.subheader("Dataset Configuration")
+st.sidebar.subheader(
+    "Dataset Configuration"
+)
 
-date_column = st.sidebar.selectbox(
+date_col=st.sidebar.selectbox(
     "Select Date Column",
     processed_df.columns
 )
 
-target_column = st.sidebar.selectbox(
+target_col=st.sidebar.selectbox(
     "Select Target Column",
-    processed_df.columns
+    processed_df.select_dtypes(
+        include=['int64','float64']
+    ).columns
 )
 
-# =========================
+# ==========================
 # DATE CONVERSION
-# =========================
+# ==========================
 
 try:
 
-    processed_df[date_column] = pd.to_datetime(
-        processed_df[date_column]
+    processed_df[date_col]=pd.to_datetime(
+        processed_df[date_col]
     )
 
 except:
 
     st.error(
-        "Selected date column cannot be converted to datetime."
+        "Date column conversion failed"
     )
 
     st.stop()
 
-# =========================
+# ==========================
 # LOAD FORECAST FILES
-# =========================
+# ==========================
 
 try:
 
-    prophet_df = pd.read_csv(
+    prophet_df=pd.read_csv(
         "exports/prophet_forecast.csv"
     )
 
 except:
 
-    prophet_df = pd.DataFrame()
+    prophet_df=pd.DataFrame()
 
 try:
 
-    xgb_df = pd.read_csv(
+    xgb_df=pd.read_csv(
         "exports/xgboost_predictions.csv"
     )
 
 except:
 
-    xgb_df = pd.DataFrame()
+    xgb_df=pd.DataFrame()
 
-# =========================
-# SIDEBAR NAVIGATION
-# =========================
+# ==========================
+# NAVIGATION
+# ==========================
 
-menu = st.sidebar.radio(
-    "Navigation",
-    [
-        "Dashboard",
-        "Dataset Analytics",
-        "Prophet Forecast",
-        "XGBoost Forecast",
-        "Model Comparison",
-        "Download Center"
-    ]
+menu=st.sidebar.radio(
+
+"Navigation",
+
+[
+"Dashboard",
+"Dataset Analytics",
+"Prophet Forecast",
+"XGBoost Forecast",
+"Model Comparison",
+"Download Center"
+]
+
 )
 
-# =========================
-# MAIN TITLE
-# =========================
+# ==========================
+# TITLE
+# ==========================
 
-st.title("📈 Advanced Time Series Forecasting Platform")
+st.title(
+"📈 Advanced Time Series Forecasting Platform"
+)
 
 st.markdown("""
-AI-powered demand forecasting platform using:
+
+AI-powered forecasting system using:
 
 - ARIMA
 - Prophet
 - XGBoost
-- Machine Learning Forecasting
-- Multi-Dataset Support
+- Machine Learning
+
 """)
 
-# =========================
+# ==========================
 # DASHBOARD
-# =========================
+# ==========================
 
-if menu == "Dashboard":
+if menu=="Dashboard":
 
-    st.header("Business Forecast Dashboard")
+    st.header(
+    "Business Dashboard"
+    )
 
-    total_sales = processed_df[target_column].sum()
+    total=processed_df[target_col].sum()
 
-    avg_sales = processed_df[target_column].mean()
+    avg=processed_df[target_col].mean()
 
-    max_sales = processed_df[target_column].max()
+    max_val=processed_df[target_col].max()
 
-    total_records = len(processed_df)
+    total_records=len(
+    processed_df
+    )
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1,col2,col3,col4=st.columns(
+    4
+    )
 
     col1.metric(
-        "Total Value",
-        f"{total_sales:,.0f}"
+    "Total",
+    f"{total:,.0f}"
     )
 
     col2.metric(
-        "Average Value",
-        f"{avg_sales:,.2f}"
+    "Average",
+    f"{avg:,.2f}"
     )
 
     col3.metric(
-        "Maximum Value",
-        f"{max_sales:,.0f}"
+    "Maximum",
+    f"{max_val:,.0f}"
     )
 
     col4.metric(
-        "Records",
-        f"{total_records:,}"
+    "Records",
+    total_records
     )
 
-    st.subheader("Time Series Trend")
+    trend_df=(
 
-    trend_df = (
-        processed_df
-        .groupby(date_column)[target_column]
-        .sum()
-        .reset_index()
+    processed_df
+    .groupby(
+    date_col
+    )[target_col]
+    .sum()
+    .reset_index()
+
     )
 
-    fig = px.line(
-        trend_df,
-        x=date_column,
-        y=target_column,
-        title="Trend Over Time"
-    )
+    fig=px.line(
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+    trend_df,
 
-    st.subheader("Top 10 Highest Values")
+    x=date_col,
+    y=target_col,
+    title="Trend Over Time"
 
-    top_values = trend_df.sort_values(
-        by=target_column,
-        ascending=False
-    ).head(10)
-
-    fig2 = px.bar(
-        top_values,
-        x=date_column,
-        y=target_column,
-        title="Top 10 Highest Values"
     )
 
     st.plotly_chart(
-        fig2,
-        use_container_width=True
+    fig,
+    use_container_width=True
     )
 
-# =========================
-# DATASET ANALYTICS
-# =========================
+# ==========================
+# DATA ANALYTICS
+# ==========================
 
-elif menu == "Dataset Analytics":
+elif menu=="Dataset Analytics":
 
-    st.header("Dataset Analytics")
+    st.header(
+    "Dataset Analytics"
+    )
 
-    st.subheader("Dataset Preview")
+    st.subheader(
+    "Dataset Preview"
+    )
 
     st.dataframe(
-        processed_df.head(100)
+    processed_df.head(
+    100
+    )
     )
 
-    st.subheader("Dataset Shape")
+    st.subheader(
+    "Shape"
+    )
 
     st.write(
-        processed_df.shape
+    processed_df.shape
     )
 
-    st.subheader("Columns")
+    st.subheader(
+    "Statistics"
+    )
 
     st.write(
-        list(processed_df.columns)
+    processed_df.describe()
     )
 
-    st.subheader("Statistical Summary")
+# ==========================
+# PROPHET
+# ==========================
 
-    st.write(
-        processed_df.describe()
+elif menu=="Prophet Forecast":
+
+    st.header(
+    "Prophet Forecast"
     )
 
-    st.subheader("Missing Values")
+    if len(
+    prophet_df
+    )>0:
 
-    st.write(
-        processed_df.isnull().sum()
-    )
+        fig=go.Figure()
 
-# =========================
-# PROPHET FORECAST
-# =========================
+        fig.add_trace(
 
-elif menu == "Prophet Forecast":
+        go.Scatter(
 
-    st.header("Prophet Forecast Analysis")
+        x=prophet_df["ds"],
+        y=prophet_df["yhat"],
+        mode='lines',
+        name="Forecast"
 
-    if prophet_df.empty:
+        )
 
-        st.warning(
-            "Prophet forecast file not found."
+        )
+
+        fig.add_trace(
+
+        go.Scatter(
+
+        x=prophet_df["ds"],
+        y=prophet_df["yhat_upper"],
+        mode='lines',
+        name="Upper"
+
+        )
+
+        )
+
+        fig.add_trace(
+
+        go.Scatter(
+
+        x=prophet_df["ds"],
+        y=prophet_df["yhat_lower"],
+        mode='lines',
+        name="Lower"
+
+        )
+
+        )
+
+        st.plotly_chart(
+        fig,
+        use_container_width=True
         )
 
     else:
 
-        fig = go.Figure()
-
-        fig.add_trace(
-            go.Scatter(
-                x=prophet_df['ds'],
-                y=prophet_df['yhat'],
-                mode='lines',
-                name='Forecast'
-            )
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=prophet_df['ds'],
-                y=prophet_df['yhat_upper'],
-                mode='lines',
-                name='Upper Interval'
-            )
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=prophet_df['ds'],
-                y=prophet_df['yhat_lower'],
-                mode='lines',
-                name='Lower Interval'
-            )
-        )
-
-        fig.update_layout(
-            title="Prophet Forecast with Confidence Intervals"
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        st.subheader("Forecast Dataset")
-
-        st.dataframe(
-            prophet_df.head(100)
-        )
-
-# =========================
-# XGBOOST FORECAST
-# =========================
-
-elif menu == "XGBoost Forecast":
-
-    st.header("XGBoost Forecast Analysis")
-
-    if xgb_df.empty:
-
         st.warning(
-            "XGBoost prediction file not found."
+        "No Prophet forecast file found"
         )
 
-    else:
+# ==========================
+# XGBOOST
+# ==========================
 
-        fig = px.line(
-            xgb_df.head(500),
-            y=['Actual', 'Predicted'],
-            title="Actual vs Predicted"
-        )
+elif menu=="XGBoost Forecast":
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        st.subheader("Prediction Dataset")
-
-        st.dataframe(
-            xgb_df.head(100)
-        )
-
-# =========================
-# MODEL COMPARISON
-# =========================
-
-elif menu == "Model Comparison":
-
-    st.header("Forecast Model Comparison")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "ARIMA MAPE",
-        "33.66%"
+    st.header(
+    "XGBoost Forecast"
     )
 
-    col2.metric(
-        "Prophet MAPE",
-        "40.74%"
-    )
+    if len(
+    xgb_df
+    )>0:
 
-    col3.metric(
-        "XGBoost",
-        "Best Performing"
-    )
+        fig=px.line(
 
-    comparison_df = pd.DataFrame({
+        xgb_df.head(
+        500
+        ),
 
-        'Model': [
-            'ARIMA',
-            'Prophet',
-            'XGBoost'
+        y=[
+        'Actual',
+        'Predicted'
         ],
 
-        'MAPE': [
-            33.66,
-            40.74,
-            20.00
-        ]
+        title="Actual vs Predicted"
+
+        )
+
+        st.plotly_chart(
+        fig,
+        use_container_width=True
+        )
+
+    else:
+
+        st.warning(
+        "No prediction file found"
+        )
+
+# ==========================
+# MODEL COMPARISON
+# ==========================
+
+elif menu=="Model Comparison":
+
+    st.header(
+    "Model Comparison"
+    )
+
+    compare=pd.DataFrame({
+
+    "Model":[
+
+    "ARIMA",
+    "Prophet",
+    "XGBoost"
+
+    ],
+
+    "MAPE":[
+
+    33.66,
+    40.74,
+    20
+
+    ]
+
     })
 
-    fig = px.bar(
-        comparison_df,
-        x='Model',
-        y='MAPE',
-        title='Forecast Accuracy Comparison'
+    fig=px.bar(
+
+    compare,
+
+    x="Model",
+    y="MAPE",
+    title="Forecast Accuracy"
+
     )
 
     st.plotly_chart(
-        fig,
-        use_container_width=True
+    fig,
+    use_container_width=True
     )
 
-# =========================
-# DOWNLOAD CENTER
-# =========================
+# ==========================
+# DOWNLOAD
+# ==========================
 
-elif menu == "Download Center":
+elif menu=="Download Center":
 
-    st.header("Download Forecast Files")
+    st.header(
+    "Download Forecast Files"
+    )
 
-    if not prophet_df.empty:
-
-        st.download_button(
-            label="Download Prophet Forecast",
-            data=prophet_df.to_csv(index=False),
-            file_name="prophet_forecast.csv",
-            mime="text/csv"
-        )
-
-    if not xgb_df.empty:
+    if len(prophet_df)>0:
 
         st.download_button(
-            label="Download XGBoost Predictions",
-            data=xgb_df.to_csv(index=False),
-            file_name="xgboost_predictions.csv",
-            mime="text/csv"
+
+        "Download Prophet",
+
+        prophet_df.to_csv(
+        index=False
+        ),
+
+        "prophet_forecast.csv",
+
+        "text/csv"
+
         )
 
-# =========================
+    if len(xgb_df)>0:
+
+        st.download_button(
+
+        "Download XGBoost",
+
+        xgb_df.to_csv(
+        index=False
+        ),
+
+        "xgboost_predictions.csv",
+
+        "text/csv"
+
+        )
+
+# ==========================
 # FOOTER
-# =========================
+# ==========================
 
 st.markdown("---")
 
 st.caption(
-    "Developed using Python, Prophet, XGBoost, Streamlit, Plotly & Machine Learning"
+"Developed using Python | Streamlit | Plotly | Prophet | XGBoost"
 )
